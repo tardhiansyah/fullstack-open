@@ -1,9 +1,9 @@
 /* eslint-disable react/prop-types */
-const Person = ({name}) => {
+const Person = ({name, number}) => {
 
     return (
         <p>
-           {name}
+           {name} {number}
         </p>
     );
 }
