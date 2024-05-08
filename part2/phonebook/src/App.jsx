@@ -3,12 +3,17 @@ import personService from "./services/persons";
 import Persons from "./components/Persons";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
+import Notification from "./components/Notification";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
+  const [notification, setNotification] = useState({
+    message: null,
+    style: null,
+  });
 
   // Get all person registered
   useEffect(() => {
@@ -48,16 +53,35 @@ const App = () => {
     };
 
     if (isExist(personObject)) {
-      const update = confirm(`${personObject.name} is already added to phonebook, replace the old number with a new one?`);
+      const update = confirm(
+        `${personObject.name} is already added to phonebook, replace the old number with a new one?`
+      );
       if (update) {
         updatePerson(personObject);
       }
     } else {
-      personService.create(personObject).then(createdPerson => {
-        setPersons(persons.concat(createdPerson));
-      }).catch(error => {
-        console.log(error);
-      });
+      personService
+        .create(personObject)
+        .then((createdPerson) => {
+          setPersons(persons.concat(createdPerson));
+          setNotification({
+            message: `Added ${createdPerson.name}`,
+            type: "success",
+          });
+          setTimeout(() => {
+            setNotification({ message: null, type: null });
+          }, 5000);
+        })
+        .catch((error) => {
+          console.log(error);
+          setNotification({
+            message: "Failed to add new person",
+            type: "error",
+          });
+          setTimeout(() => {
+            setNotification({ message: null, type: null });
+          }, 5000);
+        });
     }
 
     setNewName("");
@@ -70,14 +94,32 @@ const App = () => {
 
     personService
       .update(person.id, updatedPerson)
-      .then(updatedPerson => {
-        setPersons(persons.map(person => person.id !== updatedPerson.id ? person : updatedPerson))
-      }).catch(error => {
+      .then((updatedPerson) => {
+        setPersons(
+          persons.map((person) =>
+            person.id !== updatedPerson.id ? person : updatedPerson
+          )
+        );
+        setNotification({
+          message: `Updated ${person.name} with new number ${person.number}`,
+          type: "success",
+        });
+        setTimeout(() => {
+          setNotification({ message: null, type: null });
+        }, 5000);
+      })
+      .catch((error) => {
         console.log(error);
-        alert(`the person '${person.name} was already deleted from server'`);
-        setPersons(persons.filter(person => person.id !== updatedPerson.id));
+        setNotification({
+          message: `Information of ${person.name} has already been removed from server`,
+          type: "error",
+        });
+        setTimeout(() => {
+          setNotification({ message: null, type: null });
+        }, 5000);
+        setPersons(persons.filter((person) => person.id !== updatedPerson.id));
       });
-  }
+  };
 
   const handleChangeName = (event) => {
     setNewName(event.target.value);
@@ -98,15 +140,23 @@ const App = () => {
       .remove(id)
       .then((deletedPerson) => {
         setPersons(persons.filter((person) => person.id !== deletedPerson.id));
-      }).catch((error) => {
+        setNotification({
+          message: "Person Deleted",
+          type: "success",
+        });
+        setTimeout(() => {
+          setNotification({ message: null, type: null });
+        }, 5000);
+      })
+      .catch((error) => {
         console.log(error);
       });
-  }
-  
+  };
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notification.message} type={notification.type} />
 
       <Filter filter={filter} onChange={handleChangeFilter} />
 
@@ -122,7 +172,7 @@ const App = () => {
 
       <h3>Numbers</h3>
 
-      <Persons data={filteredPerson} toggleDelete={deletePerson}/>
+      <Persons data={filteredPerson} toggleDelete={deletePerson} />
     </div>
   );
 };
